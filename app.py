@@ -32,15 +32,14 @@ CSS = """
 
 .header-fe {
     background:linear-gradient(135deg,#050505 0%,#181818 60%,#2a2a2a 100%);
-    padding:24px 30px;
+    padding:18px 25px;
     border-radius:18px;
     border-bottom:5px solid #FFD400;
     box-shadow:0px 6px 18px rgba(0,0,0,.22);
-    text-align:center;
-    margin-bottom:18px;
+    text-align:left;
+    margin-bottom:10px;
 }
-.header-fe h1 {color:white;font-size:38px;margin:0;font-weight:900;}
-.header-fe h2 {color:#FFD400;font-size:24px;margin-top:6px;margin-bottom:10px;font-weight:800;}
+.header-fe h1 {color:white;font-size:32px;margin:0;font-weight:900;}
 .header-fe p {color:#d8d8d8;font-size:15px;margin:0;}
 
 .linha-amarela {
@@ -84,14 +83,20 @@ div[data-testid="stMetric"], .result-card {
 
 st.markdown(CSS, unsafe_allow_html=True)
 
-st.markdown("""
-<div class="header-fe">
-    <h1>FullEnergy</h1>
-    <h2>Dimensionamento de Baterias LiFePO4</h2>
-    <p>Pré-dimensionamento técnico com base na aplicação, retrofit, corrente e células disponíveis.</p>
-</div>
-<div class="linha-amarela"></div>
-""", unsafe_allow_html=True)
+col_logo, col_titulo = st.columns([1, 4])
+
+with col_logo:
+    st.image("logo.png", width=180)
+
+with col_titulo:
+    st.markdown("""
+    <div class="header-fe">
+        <h1>Dimensionamento de Baterias LiFePO4</h1>
+        <p>Pré-dimensionamento técnico com base na aplicação, retrofit, corrente e células disponíveis.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown('<div class="linha-amarela"></div>', unsafe_allow_html=True)
 
 
 def n(x, default=0.0):
@@ -228,7 +233,7 @@ def calcular_opcoes(tensao, autonomia, fator, motores, auxiliares, ah_minimo_ret
             "c_rate_uso": i_max / cap if cap else 0,
         })
 
-    resumo = {
+    return {
         "potencia_total": potencia_total,
         "i_max": i_max,
         "i_media": i_media,
@@ -239,9 +244,7 @@ def calcular_opcoes(tensao, autonomia, fator, motores, auxiliares, ah_minimo_ret
         "v_nom": v_nom,
         "v_max": v_max,
         "v_min": v_min,
-    }
-
-    return resumo, opcoes
+    }, opcoes
 
 
 def escolher_celula(modo, opcoes, resumo):
@@ -251,11 +254,7 @@ def escolher_celula(modo, opcoes, resumo):
             if o["cont_pack"] >= resumo["i_max"]
             and o["capacidade_pack"] >= resumo["ah_necessario"]
         ]
-
-        if not validas:
-            return None
-
-        return sorted(validas, key=lambda x: (x["paralelo"], x["peso_pack"], x["capacidade_pack"]))[0]
+        return None if not validas else sorted(validas, key=lambda x: (x["paralelo"], x["peso_pack"], x["capacidade_pack"]))[0]
 
     nome = modo.split(" - ")[0]
     return next(o for o in opcoes if f"{o['fabricante']} {o['modelo']}" in nome)
