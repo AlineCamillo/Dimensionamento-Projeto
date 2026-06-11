@@ -29,7 +29,14 @@ CSS = """
 <style>
 [data-testid="stAppViewContainer"]{background-color:#f4f6f8}
 .block-container{padding-top:1.2rem;padding-bottom:3rem}
-.header-fe{background:linear-gradient(135deg,#050505 0%,#181818 60%,#2a2a2a 100%);padding:18px 25px;border-radius:18px;border-bottom:5px solid #FFD400;box-shadow:0 6px 18px rgba(0,0,0,.22);text-align:left;margin-bottom:10px}
+.header-fe{
+    background:linear-gradient(135deg,#050505 0%,#181818 60%,#2a2a2a 100%);
+    padding:20px;
+    border-radius:18px;
+    border-bottom:5px solid #FFD400;
+    box-shadow:0 6px 18px rgba(0,0,0,.22);
+    margin-bottom:12px;
+}
 .header-fe h1{color:white;font-size:32px;margin:0;font-weight:900}
 .header-fe p{color:#d8d8d8;font-size:15px;margin:0}
 .linha-amarela{height:3px;background:linear-gradient(90deg,#FFD400,#FFB000,#FFD400);border-radius:6px;margin:5px 0 20px 0}
@@ -41,16 +48,31 @@ div[data-testid="stMetric"],.result-card{background:white;border-radius:16px;pad
 """
 st.markdown(CSS, unsafe_allow_html=True)
 
-col_logo, col_titulo = st.columns([1, 4])
-with col_logo:
-    st.image("logo.png", width=180)
-with col_titulo:
+st.markdown("""
+<div class="header-fe">
+""", unsafe_allow_html=True)
+
+c1, c2 = st.columns([1.2, 5])
+
+with c1:
+    st.image("logo.png", width=150)
+
+with c2:
     st.markdown("""
-    <div class="header-fe">
-        <h1>Dimensionamento de Baterias LiFePO4</h1>
-        <p>Pré-dimensionamento técnico com base na aplicação, retrofit, corrente e células disponíveis.</p>
+    <div style="padding-top:10px">
+        <h1 style="color:white;margin:0;">
+            Dimensionamento de Baterias LiFePO4
+        </h1>
+        <p style="color:#d8d8d8;margin-top:8px;">
+            Pré-dimensionamento técnico com base na aplicação, retrofit, corrente e células disponíveis.
+        </p>
     </div>
     """, unsafe_allow_html=True)
+
+st.markdown("""
+</div>
+<div class="linha-amarela"></div>
+""", unsafe_allow_html=True)
 
 st.markdown('<div class="linha-amarela"></div>', unsafe_allow_html=True)
 
