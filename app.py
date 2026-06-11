@@ -1,45 +1,24 @@
-import math
-import pandas as pd
-import streamlit as st
-
-st.set_page_config(page_title="FullEnergy | Dimensionamento LiFePO4", page_icon="🔋", layout="wide")
-
-V_NOM, V_MAX, V_MIN = 3.2, 3.55, 2.6
-SERIE = {12: 4, 24: 8, 36: 12, 48: 16, 60: 20, 72: 24}
-
-CELULAS_BASE = [
-    ("Great Power", "IFR40135", 20, 60, 60, 0.55),
-    ("Gotion", "IFP20100140A", 27, 108, 135, 0.596),
-    ("King Power", "IFP36130141AE", 50, 400, 400, 1.23),
-    ("CALB", "L148F88A", 88, 88, 176, 1.84),
-    ("REPT", "CB56-104Ah", 104, 208, 520, 1.92),
-    ("Gotion", "105Ah", 105, 105, 210, 2.0),
-    ("CALB", "L173F163", 163, 163, 326, 3.19),
-    ("EVE", "LF230", 230, 230, 460, 4.11),
-    ("XDLE", "CBA54173204", 230, 230, 690, 4.10),
-    ("EVE", "LF280K", 280, 280, 560, 5.49),
-]
-
-CELULAS = [
-    dict(fabricante=f, modelo=m, ah=ah, cont=cont, pico=pico, peso=peso)
-    for f, m, ah, cont, pico, peso in CELULAS_BASE
-]
-
 CSS = """
 <style>
 [data-testid="stAppViewContainer"]{background-color:#f4f6f8}
 .block-container{padding-top:1.2rem;padding-bottom:3rem}
+
 .header-fe{
     background:linear-gradient(135deg,#050505 0%,#181818 60%,#2a2a2a 100%);
     padding:22px 30px;
     border-radius:18px;
     border-bottom:5px solid #FFD400;
     box-shadow:0 6px 18px rgba(0,0,0,.22);
-    text-align:center;
+    text-align:left;
     margin-bottom:14px;
+    min-height:190px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
 }
-.header-fe h1{color:white;font-size:34px;margin:0;font-weight:900}
-.header-fe p{color:#d8d8d8;font-size:15px;margin-top:8px;margin-bottom:0}
+.header-fe h1{color:white;font-size:38px;margin:0;font-weight:900}
+.header-fe p{color:#d8d8d8;font-size:16px;margin-top:10px;margin-bottom:0}
+
 .linha-amarela{height:3px;background:linear-gradient(90deg,#FFD400,#FFB000,#FFD400);border-radius:6px;margin:5px 0 20px 0}
 .section-title{background:#111;color:white;padding:12px 18px;border-radius:12px;border-left:6px solid #FFD400;margin-top:26px;margin-bottom:18px;font-weight:800;font-size:20px}
 div[data-testid="stMetric"],.result-card{background:white;border-radius:16px;padding:18px;border-left:5px solid #FFD400;box-shadow:0 3px 10px rgba(0,0,0,.08)}
@@ -47,25 +26,23 @@ div[data-testid="stMetric"],.result-card{background:white;border-radius:16px;pad
 .alerta{background:#fff7d6;padding:16px;border-radius:14px;border-left:6px solid #FFD400;margin:18px 0 20px 0}
 </style>
 """
+
 st.markdown(CSS, unsafe_allow_html=True)
 
-st.markdown("""
-<div style="text-align:center; margin-bottom:12px;">
-""", unsafe_allow_html=True)
+col_logo, col_titulo = st.columns([1, 5])
 
-st.image("logo.png", width=190)
+with col_logo:
+    st.image("logo.png", width=190)
 
-st.markdown("""
-</div>
+with col_titulo:
+    st.markdown("""
+    <div class="header-fe">
+        <h1>Dimensionamento de Baterias LiFePO4</h1>
+        <p>Pré-dimensionamento técnico com base na aplicação, retrofit, corrente e células disponíveis.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-<div class="header-fe">
-    <h1>Dimensionamento de Baterias LiFePO4</h1>
-    <p>Pré-dimensionamento técnico com base na aplicação, retrofit, corrente e células disponíveis.</p>
-</div>
-
-<div class="linha-amarela"></div>
-""", unsafe_allow_html=True)
-
+st.markdown('<div class="linha-amarela"></div>', unsafe_allow_html=True)
 
 def n(x, default=0.0):
     try:
