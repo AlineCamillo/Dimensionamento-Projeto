@@ -2,11 +2,7 @@ import math
 import pandas as pd
 import streamlit as st
 
-st.set_page_config(
-    page_title="FullEnergy | Dimensionamento LiFePO4",
-    page_icon="🔋",
-    layout="wide"
-)
+st.set_page_config(page_title="FullEnergy | Dimensionamento LiFePO4", page_icon="🔋", layout="wide")
 
 V_NOM, V_MAX, V_MIN = 3.2, 3.55, 2.6
 SERIE = {12: 4, 24: 8, 36: 12, 48: 16, 60: 20, 72: 24}
@@ -110,18 +106,23 @@ def fmt(v, casas=1, unidade=""):
 
 
 def secao(titulo):
-    st.markdown(
-        f'<div class="section-title">{titulo}</div>',
-        unsafe_allow_html=True
-    )
+    st.markdown(f'<div class="section-title">{titulo}</div>', unsafe_allow_html=True)
 
 
 def card(titulo, linhas):
     itens = "".join(f"<p><b>{l}:</b> {v}</p>" for l, v in linhas)
-    st.markdown(
-        f'<div class="result-card"><h3>{titulo}</h3>{itens}</div>',
-        unsafe_allow_html=True
-    )
+    st.markdown(f'<div class="result-card"><h3>{titulo}</h3>{itens}</div>', unsafe_allow_html=True)
+
+
+def criar_cards(colunas, dados):
+    for col, (titulo, linhas) in zip(colunas, dados):
+        with col:
+            card(titulo, linhas)
+
+
+def exibir_metricas(colunas, dados):
+    for col, (titulo, valor) in zip(colunas, dados):
+        col.metric(titulo, valor)
 
 
 def serie_por_tensao(v):
@@ -129,26 +130,25 @@ def serie_por_tensao(v):
 
 
 def tabela_padrao(tipo):
-    if tipo == "motor":
-        dados = {
+    tabelas = {
+        "motor": {
             "Descrição": "Motor tração",
             "Tipo": "AC",
             "Potência": 3000,
             "Corrente (A)": 0,
             "Uso (%)": 100,
-            "Eficiência (%)": 90
-        }
-    else:
-        dados = {
+            "Eficiência (%)": 90,
+        },
+        "aux": {
             "Descrição": "Componente auxiliar",
             "Tipo": "DC",
             "Potência": 0,
             "Corrente (A)": 0,
             "Uso (%)": 100,
-            "Eficiência (%)": 100
-        }
-
-    return pd.DataFrame([dados])
+            "Eficiência (%)": 100,
+        },
+    }
+    return pd.DataFrame([tabelas[tipo]])
 
 
 def editor(df):
@@ -160,7 +160,7 @@ def editor(df):
             "Tipo": st.column_config.SelectboxColumn("Tipo", options=["AC", "DC"]),
             "Uso (%)": st.column_config.NumberColumn("Uso (%)", min_value=0, max_value=100),
             "Eficiência (%)": st.column_config.NumberColumn("Eficiência (%)", min_value=1, max_value=100),
-        }
+        },
     )
 
 
@@ -188,36 +188,29 @@ def calcular_retrofit(ah_chumbo, dod_chumbo, ef_chumbo, dod_lfp, ef_lfp):
     return ah_real_chumbo, ah_lfp_necessario
 
 
-def calcular_opcoes(tensao, autonomia, fator, motores, auxiliares, ah_minimo_retrofit=0):
+def calcular_consumo(motores, auxiliares, tensao):
     if motores.empty and auxiliares.empty:
-        potencia_total = 0
-    else:
-        tabela_consumo = pd.concat([motores, auxiliares], ignore_index=True)
-        potencia_total = sum(
-            potencia_linha(r, tensao)
-            for _, r in tabela_consumo.iterrows()
-        )
+        return 0
+    tabela = pd.concat([motores, auxiliares], ignore_index=True)
+    return sum(potencia_linha(r, tensao) for _, r in tabela.iterrows())
 
+
+def calcular_opcoes(tensao, autonomia, fator, motores, auxiliares, ah_minimo_retrofit=0):
+    potencia_total = calcular_consumo(motores, auxiliares, tensao)
     i_max = potencia_total / tensao if tensao and potencia_total else 0
     i_media = i_max * fator / 100 if fator else 0
     ah_por_consumo = i_media * autonomia if autonomia else 0
     ah_necessario = max(ah_por_consumo, ah_minimo_retrofit)
 
     serie = serie_por_tensao(tensao)
-    v_nom = serie * V_NOM
-    v_max = serie * V_MAX
-    v_min = serie * V_MIN
+    v_nom, v_max, v_min = serie * V_NOM, serie * V_MAX, serie * V_MIN
 
     opcoes = []
-
     for c in CELULAS:
         p_ah = max(1, math.ceil(ah_necessario / c["ah"]))
         p_corrente = max(1, math.ceil(i_max / c["cont"])) if i_max else 1
         paralelo = max(p_ah, p_corrente)
-
         cap = c["ah"] * paralelo
-        cont_pack = c["cont"] * paralelo
-        pico_pack = c["pico"] * paralelo
 
         opcoes.append({
             **c,
@@ -226,8 +219,8 @@ def calcular_opcoes(tensao, autonomia, fator, motores, auxiliares, ah_minimo_ret
             "total_celulas": serie * paralelo,
             "capacidade_pack": cap,
             "energia_pack": v_nom * cap / 1000,
-            "cont_pack": cont_pack,
-            "pico_pack": pico_pack,
+            "cont_pack": c["cont"] * paralelo,
+            "pico_pack": c["pico"] * paralelo,
             "peso_pack": c["peso"] * serie * paralelo,
             "autonomia": cap / i_media if i_media else 0,
             "c_rate_cont": c["cont"] / c["ah"],
@@ -251,158 +244,91 @@ def calcular_opcoes(tensao, autonomia, fator, motores, auxiliares, ah_minimo_ret
     return resumo, opcoes
 
 
-secao("1. Dados do projeto")
+def escolher_celula(modo, opcoes, resumo):
+    if modo == "Automática":
+        validas = [
+            o for o in opcoes
+            if o["cont_pack"] >= resumo["i_max"]
+            and o["capacidade_pack"] >= resumo["ah_necessario"]
+        ]
 
-tipo = st.radio(
-    "Este projeto é retrofit?",
-    ["Sim, é retrofit", "Não, é projeto novo"],
-    horizontal=True
-)
+        if not validas:
+            return None
 
-retrofit = tipo == "Sim, é retrofit"
-ah_minimo_retrofit = 0
-retro = {}
+        return sorted(validas, key=lambda x: (x["paralelo"], x["peso_pack"], x["capacidade_pack"]))[0]
 
-if retrofit:
+    nome = modo.split(" - ")[0]
+    return next(o for o in opcoes if f"{o['fabricante']} {o['modelo']}" in nome)
+
+
+def mostrar_retrofit():
     c1, c2, c3, c4, c5, c6 = st.columns(6)
 
     with c1:
-        tensao = st.number_input(
-            "Tensão chumbo atual (V)",
-            min_value=1,
-            value=48
-        )
-
+        tensao = st.number_input("Tensão chumbo atual (V)", min_value=1, value=48)
     with c2:
-        ah_chumbo = st.number_input(
-            "Capacidade chumbo atual (Ah)",
-            min_value=1.0,
-            value=220.0,
-            step=5.0
-        )
-
+        ah_chumbo = st.number_input("Capacidade chumbo atual (Ah)", min_value=1.0, value=220.0, step=5.0)
     with c3:
-        dod_chumbo = st.number_input(
-            "DoD chumbo (%)",
-            min_value=1.0,
-            max_value=100.0,
-            value=80.0,
-            step=5.0
-        )
-
+        dod_chumbo = st.number_input("DoD chumbo (%)", min_value=1.0, max_value=100.0, value=80.0, step=5.0)
     with c4:
-        ef_chumbo = st.number_input(
-            "Eficiência chumbo (%)",
-            min_value=1.0,
-            max_value=100.0,
-            value=70.0,
-            step=5.0
-        )
-
+        ef_chumbo = st.number_input("Eficiência chumbo (%)", min_value=1.0, max_value=100.0, value=70.0, step=5.0)
     with c5:
-        dod_lfp = st.number_input(
-            "DoD LiFePO4 (%)",
-            min_value=1.0,
-            max_value=100.0,
-            value=95.0,
-            step=1.0
-        )
-
+        dod_lfp = st.number_input("DoD LiFePO4 (%)", min_value=1.0, max_value=100.0, value=95.0, step=1.0)
     with c6:
-        ef_lfp = st.number_input(
-            "Eficiência LiFePO4 (%)",
-            min_value=1.0,
-            max_value=100.0,
-            value=95.0,
-            step=1.0
-        )
+        ef_lfp = st.number_input("Eficiência LiFePO4 (%)", min_value=1.0, max_value=100.0, value=95.0, step=1.0)
 
-    ah_real_chumbo, ah_minimo_retrofit = calcular_retrofit(
-        ah_chumbo,
-        dod_chumbo,
-        ef_chumbo,
-        dod_lfp,
-        ef_lfp
-    )
+    ah_real_chumbo, ah_lfp = calcular_retrofit(ah_chumbo, dod_chumbo, ef_chumbo, dod_lfp, ef_lfp)
 
     retro = {
         "ah_chumbo": ah_chumbo,
         "ah_real_chumbo": ah_real_chumbo,
-        "ah_lfp": ah_minimo_retrofit
+        "ah_lfp": ah_lfp,
     }
 
-    autonomia = 0
-    fator = 0
-    motores = pd.DataFrame()
-    auxiliares = pd.DataFrame()
+    return tensao, 0, 0, pd.DataFrame(), pd.DataFrame(), ah_lfp, retro
 
-else:
+
+def mostrar_projeto_novo():
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        tensao = st.number_input(
-            "Tensão nominal do sistema (V)",
-            min_value=1,
-            value=48
-        )
-
+        tensao = st.number_input("Tensão nominal do sistema (V)", min_value=1, value=48)
     with c2:
-        autonomia = st.number_input(
-            "Autonomia desejada (horas)",
-            min_value=0.1,
-            value=4.0,
-            step=0.5
-        )
-
+        autonomia = st.number_input("Autonomia desejada (horas)", min_value=0.1, value=4.0, step=0.5)
     with c3:
-        st.number_input(
-            "Tempo disponível para recarga (horas)",
-            min_value=0.0,
-            value=4.0,
-            step=0.5
-        )
-
+        st.number_input("Tempo disponível para recarga (horas)", min_value=0.0, value=4.0, step=0.5)
     with c4:
-        fator = st.number_input(
-            "Fator médio real de consumo (%)",
-            min_value=1,
-            max_value=100,
-            value=40,
-            step=5
-        )
+        fator = st.number_input("Fator médio real de consumo (%)", min_value=1, max_value=100, value=40, step=5)
 
-with st.expander("Faixa de operação do controlador (opcional)"):
-    cx1, cx2 = st.columns(2)
-
-    with cx1:
-        controlador_min = st.number_input(
-            "Tensão mínima do controlador (V)",
-            min_value=0.0,
-            value=0.0
-        )
-
-    with cx2:
-        controlador_max = st.number_input(
-            "Tensão máxima do controlador (V)",
-            min_value=0.0,
-            value=0.0
-        )
-
-if not retrofit:
     secao("2. Motores")
     motores = editor(tabela_padrao("motor"))
 
     secao("3. Componentes auxiliares")
     auxiliares = editor(tabela_padrao("aux"))
 
+    return tensao, autonomia, fator, motores, auxiliares, 0, {}
+
+
+secao("1. Dados do projeto")
+
+tipo = st.radio(
+    "Este projeto é retrofit?",
+    ["Sim, é retrofit", "Não, é projeto novo"],
+    horizontal=True,
+)
+
+retrofit = tipo == "Sim, é retrofit"
+
+if retrofit:
+    tensao, autonomia, fator, motores, auxiliares, ah_minimo_retrofit, retro = mostrar_retrofit()
+else:
+    tensao, autonomia, fator, motores, auxiliares, ah_minimo_retrofit, retro = mostrar_projeto_novo()
+
 secao("4. Seleção da célula")
 
 modo = st.selectbox(
     "Seleção de célula",
-    ["Automática"] + [
-        f"{c['fabricante']} {c['modelo']} - {c['ah']}Ah"
-        for c in CELULAS
-    ]
+    ["Automática"] + [f"{c['fabricante']} {c['modelo']} - {c['ah']}Ah" for c in CELULAS],
 )
 
 if st.button("Dimensionar bateria", type="primary"):
@@ -412,136 +338,94 @@ if st.button("Dimensionar bateria", type="primary"):
         fator,
         motores,
         auxiliares,
-        ah_minimo_retrofit
+        ah_minimo_retrofit,
     )
 
     if resumo["i_max"] <= 0 and not retrofit:
         st.error("Informe pelo menos uma potência ou corrente nos motores/componentes.")
         st.stop()
 
-    if modo == "Automática":
-        validas = [
-            o for o in opcoes
-            if o["cont_pack"] >= resumo["i_max"]
-            and o["capacidade_pack"] >= resumo["ah_necessario"]
-        ]
+    escolhida = escolher_celula(modo, opcoes, resumo)
 
-        if not validas:
-            st.error("Nenhuma célula atende aos critérios informados.")
-            st.stop()
-
-        escolhida = sorted(
-            validas,
-            key=lambda x: (x["paralelo"], x["peso_pack"], x["capacidade_pack"])
-        )[0]
-
-    else:
-        nome = modo.split(" - ")[0]
-        escolhida = next(
-            o for o in opcoes
-            if f"{o['fabricante']} {o['modelo']}" in nome
-        )
+    if escolhida is None:
+        st.error("Nenhuma célula atende aos critérios informados.")
+        st.stop()
 
     st.markdown(
         '<div class="alerta"><b>Observação técnica:</b> este é um pré-dimensionamento. '
         'Em retrofit, a capacidade mínima usa a equivalência chumbo x LiFePO4. '
         'Em projeto novo, o cálculo considera potência, corrente, autonomia e fator médio real de consumo.</div>',
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
     if retrofit:
         secao("Resultado da análise retrofit")
+        exibir_metricas(st.columns(4), [
+            ("🔋 Chumbo nominal", f"{retro['ah_chumbo']:.0f} Ah"),
+            ("📉 Ah real entregue chumbo", f"{retro['ah_real_chumbo']:.1f} Ah"),
+            ("✅ Ah mínimo LiFePO4", f"{retro['ah_lfp']:.1f} Ah"),
+            ("📦 LiFePO4 recomendado", f"{escolhida['capacidade_pack']:.0f} Ah"),
+        ])
 
-        r1, r2, r3, r4 = st.columns(4)
+    if not retrofit:
+        secao("Resultado do dimensionamento")
+        exibir_metricas(st.columns(4), [
+            ("⚡ Potência DC máxima", fmt(resumo["potencia_total"], 0, " W")),
+            ("🔌 Corrente máxima", fmt(resumo["i_max"], 1, " A")),
+            ("📉 Corrente média real", fmt(resumo["i_media"], 1, " A")),
+            ("🔋 Capacidade necessária", fmt(resumo["ah_necessario"], 1, " Ah")),
+        ])
 
-        r1.metric("🔋 Chumbo nominal", f"{retro['ah_chumbo']:.0f} Ah")
-        r2.metric("📉 Ah real entregue chumbo", f"{retro['ah_real_chumbo']:.1f} Ah")
-        r3.metric("✅ Ah mínimo LiFePO4", f"{retro['ah_lfp']:.1f} Ah")
-        r4.metric("📦 LiFePO4 recomendado", f"{escolhida['capacidade_pack']:.0f} Ah")
-
-    secao("Resultado do dimensionamento")
-
-    m1, m2, m3, m4 = st.columns(4)
-
-    m1.metric("⚡ Potência DC máxima", fmt(resumo["potencia_total"], 0, " W"))
-    m2.metric("🔌 Corrente máxima", fmt(resumo["i_max"], 1, " A"))
-    m3.metric("📉 Corrente média real", fmt(resumo["i_media"], 1, " A"))
-    m4.metric("🔋 Capacidade necessária", fmt(resumo["ah_necessario"], 1, " Ah"))
-
-    m5, m6 = st.columns(2)
-
-    m5.metric("📊 Energia necessária", f"{resumo['kwh_necessario']:.2f} kWh")
-    m6.metric("⚙️ Fator médio de consumo", f"{fator}%" if fator else "Não aplicado")
+        exibir_metricas(st.columns(2), [
+            ("📊 Energia necessária", f"{resumo['kwh_necessario']:.2f} kWh"),
+            ("⚙️ Fator médio de consumo", f"{fator}%"),
+        ])
 
     secao("Bateria recomendada")
-
-    r1, r2, r3 = st.columns(3)
-
-    with r1:
-        card("Configuração", [
+    criar_cards(st.columns(3), [
+        ("Configuração", [
             ("Configuração", f"{resumo['serie']}S{escolhida['paralelo']}P"),
             ("Quantidade total de células", escolhida["total_celulas"]),
             ("Tensão nominal", f"{resumo['v_nom']:.1f} V"),
             ("Tensão máxima FullEnergy", f"{resumo['v_max']:.1f} V"),
             ("Tensão mínima FullEnergy", f"{resumo['v_min']:.1f} V"),
-        ])
-
-    with r2:
-        card("Célula", [
+        ]),
+        ("Célula", [
             ("Fabricante", escolhida["fabricante"]),
             ("Modelo", escolhida["modelo"]),
             ("Capacidade da célula", f"{escolhida['ah']:.0f} Ah"),
             ("Capacidade final do pack", f"{escolhida['capacidade_pack']:.0f} Ah"),
             ("Energia final", f"{escolhida['energia_pack']:.2f} kWh"),
-        ])
-
-    with r3:
-        card("Características físicas", [
+        ]),
+        ("Características físicas", [
             ("Peso unitário da célula", f"{escolhida['peso']:.2f} kg"),
             ("Peso estimado das células", f"{escolhida['peso_pack']:.1f} kg"),
+        ]),
+    ])
+
+    if not retrofit:
+        secao("Capacidade de corrente")
+        criar_cards(st.columns(3), [
+            ("C-rate", [
+                ("C-rate contínuo da célula", f"{escolhida['c_rate_cont']:.2f}C"),
+                ("C-rate pico da célula", f"{escolhida['c_rate_pico']:.2f}C"),
+                ("C-rate utilizado pela aplicação", f"{escolhida['c_rate_uso']:.2f}C"),
+            ]),
+            ("Célula", [
+                ("Corrente contínua da célula", f"{escolhida['cont']:.0f} A"),
+                ("Corrente pico da célula", f"{escolhida['pico']:.0f} A"),
+            ]),
+            ("Pack", [
+                ("Corrente contínua do pack", f"{escolhida['cont_pack']:.0f} A"),
+                ("Corrente pico do pack", f"{escolhida['pico_pack']:.0f} A"),
+            ]),
         ])
 
-    secao("Capacidade de corrente")
-
-    q1, q2, q3 = st.columns(3)
-
-    with q1:
-        card("C-rate", [
-            ("C-rate contínuo da célula", f"{escolhida['c_rate_cont']:.2f}C"),
-            ("C-rate pico da célula", f"{escolhida['c_rate_pico']:.2f}C"),
-            ("C-rate utilizado pela aplicação", f"{escolhida['c_rate_uso']:.2f}C"),
+        secao("Autonomia")
+        exibir_metricas(st.columns(2), [
+            ("⏱️ Autonomia estimada", f"{escolhida['autonomia']:.2f} h"),
+            ("🔋 Energia disponível", f"{escolhida['energia_pack']:.2f} kWh"),
         ])
-
-    with q2:
-        card("Célula", [
-            ("Corrente contínua da célula", f"{escolhida['cont']:.0f} A"),
-            ("Corrente pico da célula", f"{escolhida['pico']:.0f} A"),
-        ])
-
-    with q3:
-        card("Pack", [
-            ("Corrente contínua do pack", f"{escolhida['cont_pack']:.0f} A"),
-            ("Corrente pico do pack", f"{escolhida['pico_pack']:.0f} A"),
-        ])
-
-    secao("Autonomia")
-
-    a1, a2 = st.columns(2)
-
-    if resumo["i_media"] > 0:
-        a1.metric("⏱️ Autonomia estimada", f"{escolhida['autonomia']:.2f} h")
-    else:
-        a1.metric("⏱️ Autonomia estimada", "Não aplicada no retrofit")
-
-    a2.metric("🔋 Energia disponível", f"{escolhida['energia_pack']:.2f} kWh")
-
-    if controlador_min > 0 and controlador_max > 0:
-        ok = resumo["v_min"] >= controlador_min and resumo["v_max"] <= controlador_max
-
-        if ok:
-            st.success("A faixa FullEnergy da bateria está dentro da faixa informada do controlador.")
-        else:
-            st.warning("A faixa FullEnergy da bateria pode não estar compatível com a faixa informada do controlador.")
 
     secao("Comparativo de células")
 
