@@ -34,15 +34,16 @@ st.markdown("""
 
 .header-fe {
     background: linear-gradient(135deg, #050505 0%, #181818 60%, #2a2a2a 100%);
-    padding: 26px 30px;
+    padding: 34px 30px;
     border-radius: 18px;
     border-bottom: 6px solid #FFD400;
     box-shadow: 0px 6px 18px rgba(0,0,0,0.22);
     text-align: center;
     margin-bottom: 24px;
 }
-.header-fe h1 {color: #ffffff; font-size: 30px; margin: 8px 0 0 0; font-weight: 800;}
-.header-fe p {color: #d8d8d8; font-size: 16px; margin-top: 6px;}
+.header-fe h1 {color: #ffffff; font-size: 44px; margin: 0; font-weight: 900;}
+.header-fe h2 {color: #FFD400; font-size: 26px; margin: 8px 0 0 0; font-weight: 800;}
+.header-fe p {color: #d8d8d8; font-size: 16px; margin-top: 8px;}
 
 .linha-amarela {
     height: 5px;
@@ -91,13 +92,14 @@ div[data-testid="stMetric"] {
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="header-fe">', unsafe_allow_html=True)
-st.image("Prancheta 5.png", width=260)
 st.markdown("""
-<h1>Dimensionamento de Baterias LiFePO4</h1>
-<p>Pré-dimensionamento técnico com base na aplicação, autonomia, corrente e células disponíveis.</p>
+<div class="header-fe">
+    <h1>FullEnergy</h1>
+    <h2>Dimensionamento de Baterias LiFePO4</h2>
+    <p>Pré-dimensionamento técnico com base na aplicação, autonomia, corrente e células disponíveis.</p>
+</div>
 """, unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+
 st.markdown('<div class="linha-amarela"></div>', unsafe_allow_html=True)
 
 def valor_numero(valor, padrao=0.0):
