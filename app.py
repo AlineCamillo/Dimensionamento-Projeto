@@ -7,20 +7,42 @@ st.set_page_config(page_title="FullEnergy | Dimensionamento LiFePO4", page_icon=
 V_NOM, V_MAX, V_MIN = 3.2, 3.55, 2.6
 SERIE = {12: 4, 24: 8, 36: 12, 48: 16, 60: 20, 72: 24}
 
+MARGEM_CONTINUA = 0.70
+MARGEM_PICO = 0.90
+
 CELULAS_BASE = [
-    ("Great Power", "IFR40135", 20, 60, 60, 0.55),
-    ("Gotion", "IFP20100140A", 27, 108, 135, 0.596),
-    ("King Power", "IFP36130141AE", 50, 400, 400, 1.23),
-    ("CALB", "L148F88A", 88, 88, 176, 1.84),
-    ("REPT", "CB56-104Ah", 104, 208, 520, 1.92),
-    ("Gotion", "105Ah", 105, 105, 210, 2.0),
-    ("CALB", "L173F163", 163, 163, 326, 3.19),
-    ("EVE", "LF230", 230, 230, 460, 4.11),
-    ("XDLE", "CBA54173204", 230, 230, 690, 4.10),
-    ("EVE", "LF280K", 280, 280, 560, 5.49),
+    ("CBAK", 15, 2.0, 6.0, 0.29),
+    ("Great Power", 20, 3.0, 3.0, 0.55),
+    ("Gotion", 27, 4.0, 5.0, 0.596),
+    ("Gotion", 52, 1.0, 5.0, 0.966),
+    ("Great Power", 50, 1.0, 2.0, 1.10),
+    ("King Power", 50, 8.0, 8.0, 1.23),
+    ("CALB", 88, 1.0, 2.0, 1.84),
+    ("REPT", 104, 2.0, 5.0, 1.92),
+    ("EVE", 105, 1.0, 2.0, 1.98),
+    ("Gotion", 105, 1.0, 2.0, 2.00),
+    ("CALB", 163, 1.0, 2.0, 3.19),
+    ("CALB", 230, 1.0, 4.0, 4.17),
+    ("EVE", 230, 1.0, 2.0, 4.11),
+    ("XDLE", 230, 2.0, 3.0, 4.10),
+    ("EVE", 280, 1.0, 2.0, 5.49),
+    ("XDLE", 280, 2.0, 3.0, 5.50),
 ]
 
-CELULAS = [dict(fabricante=f, modelo=m, ah=ah, cont=cont, pico=pico, peso=peso) for f, m, ah, cont, pico, peso in CELULAS_BASE]
+CELULAS = [
+    dict(
+        fabricante=f,
+        ah=ah,
+        c_cont=c_cont,
+        c_pico=c_pico,
+        cont_datasheet=ah * c_cont,
+        pico_datasheet=ah * c_pico,
+        cont=ah * c_cont * MARGEM_CONTINUA,
+        pico=ah * c_pico * MARGEM_PICO,
+        peso=peso,
+    )
+    for f, ah, c_cont, c_pico, peso in CELULAS_BASE
+]
 
 CSS = """
 <style>
@@ -154,10 +176,12 @@ def calcular_opcoes(tensao, autonomia, fator, motores, auxiliares, ah_minimo_ret
             "energia_pack": v_nom * cap / 1000,
             "cont_pack": c["cont"] * paralelo,
             "pico_pack": c["pico"] * paralelo,
+            "cont_datasheet_pack": c["cont_datasheet"] * paralelo,
+            "pico_datasheet_pack": c["pico_datasheet"] * paralelo,
             "peso_pack": c["peso"] * serie * paralelo,
             "autonomia": cap / i_media if i_media else 0,
-            "c_rate_cont": c["cont"] / c["ah"],
-            "c_rate_pico": c["pico"] / c["ah"],
+            "c_rate_cont": c["c_cont"],
+            "c_rate_pico": c["c_pico"],
             "c_rate_uso": i_max / cap if cap else 0,
         })
 
@@ -173,15 +197,22 @@ def calcular_opcoes(tensao, autonomia, fator, motores, auxiliares, ah_minimo_ret
         "v_max": v_max,
         "v_min": v_min,
     }
-    return resumo, opcoes
 
+    return resumo, opcoes
 
 def escolher_celula(modo, opcoes, resumo):
     if modo == "Automática":
-        validas = [o for o in opcoes if o["cont_pack"] >= resumo["i_max"] and o["capacidade_pack"] >= resumo["ah_necessario"]]
-        return sorted(validas, key=lambda x: (x["paralelo"], x["peso_pack"], x["capacidade_pack"]))[0] if validas else None
-    return next(o for o in opcoes if modo.startswith(f"{o['fabricante']} {o['modelo']}"))
+        validas = [
+            o for o in opcoes
+            if o["cont_pack"] >= resumo["i_max"]
+            and o["capacidade_pack"] >= resumo["ah_necessario"]
+        ]
+        return sorted(
+            validas,
+            key=lambda x: (x["paralelo"], x["peso_pack"], x["capacidade_pack"])
+        )[0] if validas else None
 
+    return next(o for o in opcoes if modo == f"{o['fabricante']} {o['ah']}Ah")
 
 def mostrar_retrofit():
     campos = [
@@ -239,17 +270,20 @@ def validar_controlador(controlador, resumo):
 
 def tabela_comparativo(opcoes, resumo):
     return pd.DataFrame([{
-        "Célula": f"{o['fabricante']} {o['modelo']}",
+        "Célula": f"{o['fabricante']} {o['ah']}Ah",
         "Configuração": f"{resumo['serie']}S{o['paralelo']}P",
         "Ah final": o["capacidade_pack"],
         "kWh": round(o["energia_pack"], 2),
-        "Contínua pack A": o["cont_pack"],
-        "Pico pack A": o["pico_pack"],
+        "C-rate cont.": round(o["c_rate_cont"], 2),
+        "C-rate pico": round(o["c_rate_pico"], 2),
+        "Cont. datasheet A": round(o["cont_datasheet_pack"], 0),
+        "Cont. FullEnergy A": round(o["cont_pack"], 0),
+        "Pico datasheet A": round(o["pico_datasheet_pack"], 0),
+        "Pico FullEnergy A": round(o["pico_pack"], 0),
         "C-rate utilizado": round(o["c_rate_uso"], 2),
         "Peso células kg": round(o["peso_pack"], 1),
         "Autonomia h": round(o["autonomia"], 2) if resumo["i_media"] else "-",
     } for o in opcoes])
-
 
 secao("1. Dados do projeto")
 tipo = st.radio("Este projeto é retrofit?", ["Sim, é retrofit", "Não, é projeto novo"], horizontal=True)
@@ -263,8 +297,10 @@ else:
 controlador = mostrar_controlador()
 
 secao("5. Seleção da célula")
-modo = st.selectbox("Seleção de célula", ["Automática"] + [f"{c['fabricante']} {c['modelo']} - {c['ah']}Ah" for c in CELULAS])
-
+modo = st.selectbox(
+    "Seleção de célula",
+    ["Automática"] + [f"{c['fabricante']} {c['ah']}Ah" for c in CELULAS]
+)
 if st.button("Dimensionar bateria", type="primary"):
     resumo, opcoes = calcular_opcoes(tensao, autonomia, fator, motores, auxiliares, ah_minimo_retrofit)
 
@@ -317,9 +353,8 @@ if st.button("Dimensionar bateria", type="primary"):
             ("Tensão mínima FullEnergy", f"{resumo['v_min']:.1f} V"),
         ]),
         ("Célula", [
-            ("Fabricante", escolhida["fabricante"]),
-            ("Modelo", escolhida["modelo"]),
-            ("Capacidade da célula", f"{escolhida['ah']:.0f} Ah"),
+           ("Fabricante", escolhida["fabricante"]),
+("Capacidade da célula", f"{escolhida['ah']:.0f} Ah"),
             ("Capacidade final do pack", f"{escolhida['capacidade_pack']:.0f} Ah"),
             ("Energia final", f"{escolhida['energia_pack']:.2f} kWh"),
         ]),
@@ -337,10 +372,14 @@ if st.button("Dimensionar bateria", type="primary"):
                 ("C-rate pico da célula", f"{escolhida['c_rate_pico']:.2f}C"),
                 ("C-rate utilizado pela aplicação", f"{escolhida['c_rate_uso']:.2f}C"),
             ]),
-            ("Célula", [
-                ("Corrente contínua da célula", f"{escolhida['cont']:.0f} A"),
-                ("Corrente pico da célula", f"{escolhida['pico']:.0f} A"),
-            ]),
+           ("Célula", [
+    ("C-rate contínuo", f"{escolhida['c_rate_cont']:.2f}C"),
+    ("C-rate pico", f"{escolhida['c_rate_pico']:.2f}C"),
+    ("Contínua datasheet", f"{escolhida['cont_datasheet']:.0f} A"),
+    ("Contínua FullEnergy 70%", f"{escolhida['cont']:.0f} A"),
+    ("Pico datasheet", f"{escolhida['pico_datasheet']:.0f} A"),
+    ("Pico FullEnergy 90%", f"{escolhida['pico']:.0f} A"),
+]),
             ("Pack", [
                 ("Corrente contínua do pack", f"{escolhida['cont_pack']:.0f} A"),
                 ("Corrente pico do pack", f"{escolhida['pico_pack']:.0f} A"),
