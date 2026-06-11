@@ -31,14 +31,15 @@ CSS = """
 .block-container{padding-top:1.2rem;padding-bottom:3rem}
 .header-fe{
     background:linear-gradient(135deg,#050505 0%,#181818 60%,#2a2a2a 100%);
-    padding:20px;
+    padding:22px 30px;
     border-radius:18px;
     border-bottom:5px solid #FFD400;
     box-shadow:0 6px 18px rgba(0,0,0,.22);
-    margin-bottom:12px;
+    text-align:center;
+    margin-bottom:14px;
 }
-.header-fe h1{color:white;font-size:32px;margin:0;font-weight:900}
-.header-fe p{color:#d8d8d8;font-size:15px;margin:0}
+.header-fe h1{color:white;font-size:34px;margin:0;font-weight:900}
+.header-fe p{color:#d8d8d8;font-size:15px;margin-top:8px;margin-bottom:0}
 .linha-amarela{height:3px;background:linear-gradient(90deg,#FFD400,#FFB000,#FFD400);border-radius:6px;margin:5px 0 20px 0}
 .section-title{background:#111;color:white;padding:12px 18px;border-radius:12px;border-left:6px solid #FFD400;margin-top:26px;margin-bottom:18px;font-weight:800;font-size:20px}
 div[data-testid="stMetric"],.result-card{background:white;border-radius:16px;padding:18px;border-left:5px solid #FFD400;box-shadow:0 3px 10px rgba(0,0,0,.08)}
@@ -49,32 +50,21 @@ div[data-testid="stMetric"],.result-card{background:white;border-radius:16px;pad
 st.markdown(CSS, unsafe_allow_html=True)
 
 st.markdown("""
-<div class="header-fe">
+<div style="text-align:center; margin-bottom:12px;">
 """, unsafe_allow_html=True)
 
-c1, c2 = st.columns([1.2, 5])
-
-with c1:
-    st.image("logo.png", width=150)
-
-with c2:
-    st.markdown("""
-    <div style="padding-top:10px">
-        <h1 style="color:white;margin:0;">
-            Dimensionamento de Baterias LiFePO4
-        </h1>
-        <p style="color:#d8d8d8;margin-top:8px;">
-            Pré-dimensionamento técnico com base na aplicação, retrofit, corrente e células disponíveis.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+st.image("logo.png", width=190)
 
 st.markdown("""
 </div>
+
+<div class="header-fe">
+    <h1>Dimensionamento de Baterias LiFePO4</h1>
+    <p>Pré-dimensionamento técnico com base na aplicação, retrofit, corrente e células disponíveis.</p>
+</div>
+
 <div class="linha-amarela"></div>
 """, unsafe_allow_html=True)
-
-st.markdown('<div class="linha-amarela"></div>', unsafe_allow_html=True)
 
 
 def n(x, default=0.0):
