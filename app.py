@@ -235,7 +235,49 @@ def validar_controlador(controlador, resumo):
     for condicao, funcao, mensagem in alertas:
         if condicao:
             funcao(mensagem)
+def mostrar_controlador():
+    secao("4. Faixa de operação do controlador")
 
+    cols = st.columns(4)
+
+    tensao_min_controlador = input_num(
+        cols[0],
+        "Tensão mínima do controlador (V)",
+        0.0,
+        min_value=0.0,
+        step=1.0
+    )
+
+    tensao_max_controlador = input_num(
+        cols[1],
+        "Tensão máxima do controlador (V)",
+        0.0,
+        min_value=0.0,
+        step=1.0
+    )
+
+    corrente_cont_controlador = input_num(
+        cols[2],
+        "Corrente contínua do controlador (A)",
+        0.0,
+        min_value=0.0,
+        step=5.0
+    )
+
+    corrente_pico_controlador = input_num(
+        cols[3],
+        "Corrente pico do controlador (A)",
+        0.0,
+        min_value=0.0,
+        step=5.0
+    )
+
+    return {
+        "tensao_min": tensao_min_controlador,
+        "tensao_max": tensao_max_controlador,
+        "corrente_cont": corrente_cont_controlador,
+        "corrente_pico": corrente_pico_controlador,
+    }
 
 def tabela_comparativo(opcoes, resumo):
     return pd.DataFrame([{
@@ -267,6 +309,29 @@ modo = st.selectbox("Seleção de célula", ["Automática"] + [f"{c['fabricante'
 
 if st.button("Dimensionar bateria", type="primary"):
     resumo, opcoes = calcular_opcoes(tensao, autonomia, fator, motores, auxiliares, ah_minimo_retrofit)
+    if controlador["tensao_min"] > 0 and resumo["v_min"] < controlador["tensao_min"]:
+    st.warning(
+        f"⚠️ A tensão mínima da bateria ({resumo['v_min']:.1f}V) "
+        f"está abaixo da tensão mínima do controlador ({controlador['tensao_min']:.1f}V)."
+    )
+
+if controlador["tensao_max"] > 0 and resumo["v_max"] > controlador["tensao_max"]:
+    st.warning(
+        f"⚠️ A tensão máxima da bateria ({resumo['v_max']:.1f}V) "
+        f"está acima da tensão máxima do controlador ({controlador['tensao_max']:.1f}V)."
+    )
+
+if controlador["corrente_cont"] > 0 and resumo["i_max"] > controlador["corrente_cont"]:
+    st.warning(
+        f"⚠️ A corrente máxima estimada ({resumo['i_max']:.1f}A) "
+        f"está acima da corrente contínua do controlador ({controlador['corrente_cont']:.1f}A)."
+    )
+
+if controlador["corrente_pico"] > 0 and resumo["i_max"] > controlador["corrente_pico"]:
+    st.error(
+        f"❌ A corrente máxima estimada ({resumo['i_max']:.1f}A) "
+        f"está acima da corrente pico do controlador ({controlador['corrente_pico']:.1f}A)."
+    )
 
     if resumo["i_max"] <= 0 and not retrofit:
         st.error("Informe pelo menos uma potência ou corrente nos motores/componentes.")
