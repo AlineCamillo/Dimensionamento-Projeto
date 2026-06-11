@@ -92,6 +92,22 @@ def tabela_padrao(tipo):
     }
     return pd.DataFrame([padrao[tipo]], columns=["Descrição", "Tipo", "Potência", "Corrente (A)", "Uso (%)", "Eficiência (%)"])
 
+def tabela_controlador():
+    return pd.DataFrame([{
+        "Descrição": "Controlador principal",
+        "Tensão mín. (V)": 40,
+        "Tensão máx. (V)": 60,
+        "Corrente contínua (A)": 150,
+        "Corrente pico (A)": 300,
+    }])
+
+
+def editor_controlador(df):
+    return st.data_editor(
+        df,
+        num_rows="dynamic",
+        use_container_width=True,
+    )
 
 def editor(df):
     return st.data_editor(
@@ -204,13 +220,16 @@ def mostrar_projeto_novo():
     input_num(cols[2], "Tempo disponível para recarga (horas)", 4.0, min_value=0.0, step=0.5)
     fator = input_num(cols[3], "Fator médio real de consumo (%)", 40, min_value=1, max_value=100, step=5)
 
-    secao("2. Motores")
-    motores = editor(tabela_padrao("motor"))
+secao("2. Motores")
+motores = editor(tabela_padrao("motor"))
 
-    secao("3. Componentes auxiliares")
-    auxiliares = editor(tabela_padrao("aux"))
+secao("3. Controlador")
+controlador_df = editor_controlador(tabela_controlador())
 
-    return tensao, autonomia, fator, motores, auxiliares, 0, {}
+secao("4. Componentes auxiliares")
+auxiliares = editor(tabela_padrao("aux"))
+
+return tensao, autonomia, fator, motores, controlador_df, auxiliares, 0, {}
 
 
 def mostrar_controlador():
@@ -258,7 +277,7 @@ retrofit = tipo == "Sim, é retrofit"
 if retrofit:
     tensao, autonomia, fator, motores, auxiliares, ah_minimo_retrofit, retro = mostrar_retrofit()
 else:
-    tensao, autonomia, fator, motores, auxiliares, ah_minimo_retrofit, retro = mostrar_projeto_novo()
+   tensao, autonomia, fator, motores, controlador_df, auxiliares, ah_minimo_retrofit, retro = mostrar_projeto_novo()
 
 controlador = mostrar_controlador()
 
