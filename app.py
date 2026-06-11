@@ -29,9 +29,23 @@ CSS = """
 <style>
 [data-testid="stAppViewContainer"]{background-color:#f4f6f8}
 .block-container{padding-top:1.2rem;padding-bottom:3rem}
-.header-fe{background:linear-gradient(135deg,#050505 0%,#181818 60%,#2a2a2a 100%);padding:18px 25px;border-radius:18px;border-bottom:5px solid #FFD400;box-shadow:0 6px 18px rgba(0,0,0,.22);text-align:left;margin-bottom:10px}
-.header-fe h1{color:white;font-size:32px;margin:0;font-weight:900}
-.header-fe p{color:#d8d8d8;font-size:15px;margin:0}
+
+.header-fe{
+    background:linear-gradient(135deg,#050505 0%,#181818 60%,#2a2a2a 100%);
+    padding:22px 30px;
+    border-radius:18px;
+    border-bottom:5px solid #FFD400;
+    box-shadow:0 6px 18px rgba(0,0,0,.22);
+    text-align:left;
+    margin-bottom:14px;
+    min-height:190px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+.header-fe h1{color:white;font-size:38px;margin:0;font-weight:900}
+.header-fe p{color:#d8d8d8;font-size:16px;margin-top:10px;margin-bottom:0}
+
 .linha-amarela{height:3px;background:linear-gradient(90deg,#FFD400,#FFB000,#FFD400);border-radius:6px;margin:5px 0 20px 0}
 .section-title{background:#111;color:white;padding:12px 18px;border-radius:12px;border-left:6px solid #FFD400;margin-top:26px;margin-bottom:18px;font-weight:800;font-size:20px}
 div[data-testid="stMetric"],.result-card{background:white;border-radius:16px;padding:18px;border-left:5px solid #FFD400;box-shadow:0 3px 10px rgba(0,0,0,.08)}
@@ -39,11 +53,14 @@ div[data-testid="stMetric"],.result-card{background:white;border-radius:16px;pad
 .alerta{background:#fff7d6;padding:16px;border-radius:14px;border-left:6px solid #FFD400;margin:18px 0 20px 0}
 </style>
 """
+
 st.markdown(CSS, unsafe_allow_html=True)
 
-col_logo, col_titulo = st.columns([1, 4])
+col_logo, col_titulo = st.columns([1, 5])
+
 with col_logo:
-    st.image("logo.png", width=180)
+    st.image("logo.png", width=190)
+
 with col_titulo:
     st.markdown("""
     <div class="header-fe">
