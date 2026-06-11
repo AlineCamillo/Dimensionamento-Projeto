@@ -8,10 +8,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# =========================
-# PARÂMETROS FULLENERGY
-# =========================
-
 V_CEL_NOMINAL = 3.2
 V_CEL_MAX = 3.55
 V_CEL_MIN = 2.6
@@ -25,26 +21,18 @@ SERIE_PADRAO = {
     72: 24,
 }
 
-# =========================
-# BANCO DE CÉLULAS
-# =========================
-
 CELULAS = [
-    {"fabricante": "Great Power", "modelo": "IFR40135", "ah": 20, "v": 3.2, "descarga_continua_a": 60, "descarga_pico_a": 60, "carga_continua_a": 20, "peso_kg": 0.55},
-    {"fabricante": "Gotion", "modelo": "IFP20100140A", "ah": 27, "v": 3.2, "descarga_continua_a": 108, "descarga_pico_a": 135, "carga_continua_a": 54, "peso_kg": 0.596},
-    {"fabricante": "King Power", "modelo": "IFP36130141AE", "ah": 50, "v": 3.2, "descarga_continua_a": 400, "descarga_pico_a": 400, "carga_continua_a": 150, "peso_kg": 1.23},
-    {"fabricante": "CALB", "modelo": "L148F88A", "ah": 88, "v": 3.2, "descarga_continua_a": 88, "descarga_pico_a": 176, "carga_continua_a": 88, "peso_kg": 1.84},
-    {"fabricante": "REPT", "modelo": "CB56-104Ah", "ah": 104, "v": 3.2, "descarga_continua_a": 208, "descarga_pico_a": 520, "carga_continua_a": 104, "peso_kg": 1.92},
-    {"fabricante": "Gotion", "modelo": "105Ah", "ah": 105, "v": 3.2, "descarga_continua_a": 105, "descarga_pico_a": 210, "carga_continua_a": 52.5, "peso_kg": 2.0},
-    {"fabricante": "CALB", "modelo": "L173F163", "ah": 163, "v": 3.2, "descarga_continua_a": 163, "descarga_pico_a": 326, "carga_continua_a": 163, "peso_kg": 3.19},
-    {"fabricante": "EVE", "modelo": "LF230", "ah": 230, "v": 3.2, "descarga_continua_a": 230, "descarga_pico_a": 460, "carga_continua_a": 230, "peso_kg": 4.11},
-    {"fabricante": "XDLE", "modelo": "CBA54173204", "ah": 230, "v": 3.2, "descarga_continua_a": 230, "descarga_pico_a": 690, "carga_continua_a": 230, "peso_kg": 4.10},
-    {"fabricante": "EVE", "modelo": "LF280K", "ah": 280, "v": 3.2, "descarga_continua_a": 280, "descarga_pico_a": 560, "carga_continua_a": 280, "peso_kg": 5.49},
+    {"fabricante": "Great Power", "modelo": "IFR40135", "ah": 20, "descarga_continua_a": 60, "descarga_pico_a": 60, "carga_continua_a": 20, "peso_kg": 0.55},
+    {"fabricante": "Gotion", "modelo": "IFP20100140A", "ah": 27, "descarga_continua_a": 108, "descarga_pico_a": 135, "carga_continua_a": 54, "peso_kg": 0.596},
+    {"fabricante": "King Power", "modelo": "IFP36130141AE", "ah": 50, "descarga_continua_a": 400, "descarga_pico_a": 400, "carga_continua_a": 150, "peso_kg": 1.23},
+    {"fabricante": "CALB", "modelo": "L148F88A", "ah": 88, "descarga_continua_a": 88, "descarga_pico_a": 176, "carga_continua_a": 88, "peso_kg": 1.84},
+    {"fabricante": "REPT", "modelo": "CB56-104Ah", "ah": 104, "descarga_continua_a": 208, "descarga_pico_a": 520, "carga_continua_a": 104, "peso_kg": 1.92},
+    {"fabricante": "Gotion", "modelo": "105Ah", "ah": 105, "descarga_continua_a": 105, "descarga_pico_a": 210, "carga_continua_a": 52.5, "peso_kg": 2.0},
+    {"fabricante": "CALB", "modelo": "L173F163", "ah": 163, "descarga_continua_a": 163, "descarga_pico_a": 326, "carga_continua_a": 163, "peso_kg": 3.19},
+    {"fabricante": "EVE", "modelo": "LF230", "ah": 230, "descarga_continua_a": 230, "descarga_pico_a": 460, "carga_continua_a": 230, "peso_kg": 4.11},
+    {"fabricante": "XDLE", "modelo": "CBA54173204", "ah": 230, "descarga_continua_a": 230, "descarga_pico_a": 690, "carga_continua_a": 230, "peso_kg": 4.10},
+    {"fabricante": "EVE", "modelo": "LF280K", "ah": 280, "descarga_continua_a": 280, "descarga_pico_a": 560, "carga_continua_a": 280, "peso_kg": 5.49},
 ]
-
-# =========================
-# ESTILO
-# =========================
 
 st.markdown("""
 <style>
@@ -69,15 +57,9 @@ st.markdown("""
 st.markdown("""
 <div class="header">
     <h1>🔋 FullEnergy | Dimensionamento de Bateria LiFePO4</h1>
-    <p>Ferramenta técnica para pré-dimensionamento de baterias de lítio com base na aplicação, autonomia, corrente e células disponíveis.</p>
+    <p>Pré-dimensionamento técnico com base na aplicação, autonomia, corrente e células disponíveis.</p>
 </div>
 """, unsafe_allow_html=True)
-
-st.write("")
-
-# =========================
-# FUNÇÕES
-# =========================
 
 def valor_numero(valor, padrao=0.0):
     try:
@@ -88,8 +70,7 @@ def valor_numero(valor, padrao=0.0):
         return padrao
 
 def serie_por_tensao(tensao):
-    tensao_int = int(tensao)
-    return SERIE_PADRAO.get(tensao_int, max(1, round(tensao / V_CEL_NOMINAL)))
+    return SERIE_PADRAO.get(int(tensao), max(1, round(tensao / V_CEL_NOMINAL)))
 
 def calcula_potencia_linha(row, tensao):
     potencia = valor_numero(row.get("Potência", 0))
@@ -104,10 +85,7 @@ def calcula_potencia_linha(row, tensao):
     if corrente > 0 and tensao > 0:
         potencia_dc = corrente * tensao
     else:
-        if tipo == "AC":
-            potencia_dc = potencia / eficiencia if eficiencia > 0 else potencia
-        else:
-            potencia_dc = potencia
+        potencia_dc = potencia / eficiencia if tipo == "AC" and eficiencia > 0 else potencia
 
     return potencia_dc * uso
 
@@ -118,31 +96,10 @@ def padrao_tabela_motor():
 
 def padrao_tabela_aux():
     return pd.DataFrame([
-        {"Descrição": "Iluminação / módulo / bomba", "Tipo": "DC", "Potência": 0, "Corrente (A)": 0, "Uso (%)": 100, "Eficiência (%)": 100}
+        {"Descrição": "Componente auxiliar", "Tipo": "DC", "Potência": 0, "Corrente (A)": 0, "Uso (%)": 100, "Eficiência (%)": 100}
     ])
 
-def sugerir_bms(corrente):
-    opcoes = [30, 60, 100, 150, 200, 300, 400, 500, 600]
-    for o in opcoes:
-        if corrente <= o:
-            return o
-    return math.ceil(corrente / 100) * 100
-
-def sugerir_carregador(capacidade_ah, tempo_h):
-    if tempo_h <= 0:
-        return None
-    corrente = capacidade_ah / tempo_h
-    opcoes = [10, 15, 25, 30, 50, 80, 100, 120, 150, 200]
-    for o in opcoes:
-        if corrente <= o:
-            return o
-    return math.ceil(corrente / 10) * 10
-
-# =========================
-# ENTRADAS
-# =========================
-
-st.subheader("1. Tipo de projeto")
+st.subheader("1. Dados do projeto")
 
 tipo = st.radio(
     "Este projeto é retrofit?",
@@ -212,23 +169,19 @@ modo_celula = st.selectbox(
     ["Automática"] + [f"{c['fabricante']} {c['modelo']} - {c['ah']}Ah" for c in CELULAS]
 )
 
-# =========================
-# CÁLCULO
-# =========================
-
 if st.button("Dimensionar bateria", type="primary"):
 
     potencia_motores = sum(calcula_potencia_linha(row, tensao_sistema) for _, row in motores.iterrows())
     potencia_aux = sum(calcula_potencia_linha(row, tensao_sistema) for _, row in auxiliares.iterrows())
 
     potencia_total_pico = potencia_motores + potencia_aux
-    corrente_pico_estimado = potencia_total_pico / tensao_sistema if tensao_sistema > 0 else 0
+    corrente_maxima_aplicacao = potencia_total_pico / tensao_sistema if tensao_sistema > 0 else 0
 
     fator = fator_consumo_medio / 100
     potencia_media_real = potencia_total_pico * fator
-    corrente_media_real = corrente_pico_estimado * fator
+    corrente_media_real = corrente_maxima_aplicacao * fator
 
-    if corrente_pico_estimado <= 0:
+    if corrente_maxima_aplicacao <= 0:
         st.error("Informe pelo menos uma potência ou corrente nos motores/componentes para calcular o dimensionamento.")
         st.stop()
 
@@ -246,25 +199,24 @@ if st.button("Dimensionar bateria", type="primary"):
     for cel in CELULAS:
         ah_celula = valor_numero(cel.get("ah", 0))
         descarga_cont = valor_numero(cel.get("descarga_continua_a", 0))
+        descarga_pico = valor_numero(cel.get("descarga_pico_a", 0))
+        peso_celula = valor_numero(cel.get("peso_kg", 0))
 
-        if ah_celula > 0 and ah_necessario > 0:
-            paralelo_por_ah = max(1, math.ceil(float(ah_necessario) / float(ah_celula)))
-        else:
-            paralelo_por_ah = 1
-
-        if descarga_cont > 0 and corrente_pico_estimado > 0:
-            paralelo_por_corrente = max(1, math.ceil(float(corrente_pico_estimado) / float(descarga_cont)))
-        else:
-            paralelo_por_corrente = 1
+        paralelo_por_ah = max(1, math.ceil(ah_necessario / ah_celula)) if ah_celula > 0 else 1
+        paralelo_por_corrente = max(1, math.ceil(corrente_maxima_aplicacao / descarga_cont)) if descarga_cont > 0 else 1
 
         paralelo = max(1, paralelo_por_ah, paralelo_por_corrente)
 
         capacidade_pack = ah_celula * paralelo
         energia_pack_kwh = tensao_nominal_pack * capacidade_pack / 1000
         corrente_cont_pack = descarga_cont * paralelo
-        corrente_pico_pack = valor_numero(cel.get("descarga_pico_a", 0)) * paralelo
-        peso_pack = valor_numero(cel.get("peso_kg", 0)) * serie * paralelo
+        corrente_pico_pack = descarga_pico * paralelo
+        peso_pack = peso_celula * serie * paralelo
         autonomia_estimada = capacidade_pack / corrente_media_real if corrente_media_real > 0 else 0
+
+        c_rate_cont_celula = descarga_cont / ah_celula if ah_celula > 0 else 0
+        c_rate_pico_celula = descarga_pico / ah_celula if ah_celula > 0 else 0
+        c_rate_utilizado_pack = corrente_maxima_aplicacao / capacidade_pack if capacidade_pack > 0 else 0
 
         resultados.append({
             "celula": cel,
@@ -274,13 +226,17 @@ if st.button("Dimensionar bateria", type="primary"):
             "corrente_cont_pack": corrente_cont_pack,
             "corrente_pico_pack": corrente_pico_pack,
             "peso_pack": peso_pack,
-            "autonomia_estimada": autonomia_estimada
+            "autonomia_estimada": autonomia_estimada,
+            "c_rate_cont_celula": c_rate_cont_celula,
+            "c_rate_pico_celula": c_rate_pico_celula,
+            "c_rate_utilizado_pack": c_rate_utilizado_pack
         })
 
     if modo_celula == "Automática":
         resultados_validos = [
             r for r in resultados
-            if r["corrente_cont_pack"] >= corrente_pico_estimado and r["capacidade_pack"] >= ah_necessario
+            if r["corrente_cont_pack"] >= corrente_maxima_aplicacao
+            and r["capacidade_pack"] >= ah_necessario
         ]
 
         if not resultados_validos:
@@ -300,19 +256,17 @@ if st.button("Dimensionar bateria", type="primary"):
 
     cel = escolhido["celula"]
     paralelo = escolhido["paralelo"]
-
-    bms_sugerido = sugerir_bms(corrente_pico_estimado * 1.25)
-    carregador = sugerir_carregador(escolhido["capacidade_pack"], tempo_recarga_h)
+    total_celulas = serie * paralelo
 
     st.markdown('<div class="alerta">', unsafe_allow_html=True)
-    st.write("**Observação técnica:** este é um pré-dimensionamento. A autonomia é calculada pelo consumo médio real informado. A seleção de célula e BMS considera a corrente máxima estimada da aplicação.")
+    st.write("**Observação técnica:** este é um pré-dimensionamento. A autonomia utiliza o fator médio real de consumo. Os limites de corrente são baseados nos dados cadastrados das células.")
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.subheader("Resultado do dimensionamento")
 
     r1, r2, r3, r4 = st.columns(4)
     r1.metric("Potência DC máxima estimada", f"{potencia_total_pico:,.0f} W".replace(",", "."))
-    r2.metric("Corrente máxima estimada", f"{corrente_pico_estimado:.1f} A")
+    r2.metric("Corrente máxima estimada", f"{corrente_maxima_aplicacao:.1f} A")
     r3.metric("Corrente média real", f"{corrente_media_real:.1f} A")
     r4.metric("Capacidade necessária", f"{ah_necessario:.1f} Ah")
 
@@ -325,30 +279,48 @@ if st.button("Dimensionar bateria", type="primary"):
     c1, c2, c3 = st.columns(3)
 
     with c1:
+        st.markdown("### Configuração")
         st.write(f"**Configuração:** {serie}S{paralelo}P")
+        st.write(f"**Quantidade total de células:** {total_celulas}")
         st.write(f"**Tensão nominal:** {tensao_nominal_pack:.1f} V")
-        st.write(f"**Faixa FullEnergy:** {tensao_min_pack:.1f} V a {tensao_max_pack:.1f} V")
+        st.write(f"**Tensão máxima FullEnergy:** {tensao_max_pack:.1f} V")
+        st.write(f"**Tensão mínima FullEnergy:** {tensao_min_pack:.1f} V")
 
     with c2:
-        st.write(f"**Célula:** {cel['fabricante']} {cel['modelo']}")
-        st.write(f"**Capacidade final:** {escolhido['capacidade_pack']:.0f} Ah")
+        st.markdown("### Célula")
+        st.write(f"**Fabricante:** {cel['fabricante']}")
+        st.write(f"**Modelo:** {cel['modelo']}")
+        st.write(f"**Capacidade da célula:** {cel['ah']:.0f} Ah")
+        st.write(f"**Capacidade final do pack:** {escolhido['capacidade_pack']:.0f} Ah")
         st.write(f"**Energia final:** {escolhido['energia_pack_kwh']:.2f} kWh")
 
     with c3:
-        st.write(f"**Corrente contínua do pack:** {escolhido['corrente_cont_pack']:.0f} A")
-        st.write(f"**Corrente pico do pack:** {escolhido['corrente_pico_pack']:.0f} A")
+        st.markdown("### Características físicas")
+        st.write(f"**Peso unitário da célula:** {cel['peso_kg']:.2f} kg")
         st.write(f"**Peso estimado das células:** {escolhido['peso_pack']:.1f} kg")
 
-    st.subheader("Autonomia e recarga")
+    st.subheader("Capacidade de corrente")
 
-    a1, a2, a3 = st.columns(3)
+    cc1, cc2, cc3 = st.columns(3)
+
+    with cc1:
+        st.write(f"**C-rate contínuo da célula:** {escolhido['c_rate_cont_celula']:.2f}C")
+        st.write(f"**C-rate pico da célula:** {escolhido['c_rate_pico_celula']:.2f}C")
+
+    with cc2:
+        st.write(f"**Corrente contínua da célula:** {cel['descarga_continua_a']:.0f} A")
+        st.write(f"**Corrente pico da célula:** {cel['descarga_pico_a']:.0f} A")
+
+    with cc3:
+        st.write(f"**Corrente contínua do pack:** {escolhido['corrente_cont_pack']:.0f} A")
+        st.write(f"**Corrente pico do pack:** {escolhido['corrente_pico_pack']:.0f} A")
+        st.write(f"**C-rate utilizado pela aplicação:** {escolhido['c_rate_utilizado_pack']:.2f}C")
+
+    st.subheader("Autonomia")
+
+    a1, a2 = st.columns(2)
     a1.metric("Autonomia estimada", f"{escolhido['autonomia_estimada']:.2f} h")
-    a2.metric("BMS sugerido", f"{bms_sugerido} A")
-
-    if carregador:
-        a3.metric("Carregador sugerido", f"{int(tensao_sistema)}V {carregador}A")
-    else:
-        a3.metric("Carregador sugerido", "Definir manualmente")
+    a2.metric("Energia disponível", f"{escolhido['energia_pack_kwh']:.2f} kWh")
 
     if controlador_min > 0 and controlador_max > 0:
         if tensao_min_pack >= controlador_min and tensao_max_pack <= controlador_max:
@@ -365,7 +337,9 @@ if st.button("Dimensionar bateria", type="primary"):
             "Configuração": f"{serie}S{r['paralelo']}P",
             "Ah final": r["capacidade_pack"],
             "kWh": round(r["energia_pack_kwh"], 2),
-            "Corrente contínua A": r["corrente_cont_pack"],
+            "Contínua pack A": r["corrente_cont_pack"],
+            "Pico pack A": r["corrente_pico_pack"],
+            "C-rate utilizado": round(r["c_rate_utilizado_pack"], 2),
             "Peso células kg": round(r["peso_pack"], 1),
             "Autonomia h": round(r["autonomia_estimada"], 2)
         })
