@@ -1,24 +1,4 @@
-import math
-import pandas as pd
-import streamlit as st
 
-st.set_page_config(page_title="FullEnergy | Dimensionamento LiFePO4", page_icon="🔋", layout="wide")
-
-V_NOM, V_MAX, V_MIN = 3.2, 3.55, 2.6
-SERIE = {12: 4, 24: 8, 36: 12, 48: 16, 60: 20, 72: 24}
-
-CELULAS_BASE = [
-    ("Great Power", "IFR40135", 20, 60, 60, 0.55),
-    ("Gotion", "IFP20100140A", 27, 108, 135, 0.596),
-    ("King Power", "IFP36130141AE", 50, 400, 400, 1.23),
-    ("CALB", "L148F88A", 88, 88, 176, 1.84),
-    ("REPT", "CB56-104Ah", 104, 208, 520, 1.92),
-    ("Gotion", "105Ah", 105, 105, 210, 2.0),
-    ("CALB", "L173F163", 163, 163, 326, 3.19),
-    ("EVE", "LF230", 230, 230, 460, 4.11),
-    ("XDLE", "CBA54173204", 230, 230, 690, 4.10),
-    ("EVE", "LF280K", 280, 280, 560, 5.49),
-]
 
 CELULAS = [dict(fabricante=f, modelo=m, ah=ah, cont=cont, pico=pico, peso=peso) for f, m, ah, cont, pico, peso in CELULAS_BASE]
 
